@@ -21,6 +21,9 @@ void ofApp::setup(){
     setupUI();
     setupVideo();
     
+    //setup osc
+    setupOSC();
+    
     //hide cursor
     CGDisplayHideCursor(NULL);
     
@@ -46,7 +49,7 @@ void ofApp::update(){
     if(sendOSC){
         
         float p = player.getPosition();
-        printf("%f\n",p);
+        //printf("%f\n",p);
         
         ofxOscMessage m;
         m.setAddress( "/movie/position" );
@@ -60,10 +63,13 @@ void ofApp::update(){
             
         }
         
-        iPadSender.sendMessage(m); //send every frame for iphone
-        iPhoneSender.sendMessage(m); // send every frame for ipad
+        if (count % iPadOSCCount == 0) iPadSender.sendMessage(m); //send every frame for iphone
+        if (count % iPhoneOSCCount == 0) iPhoneSender.sendMessage(m); // send every frame for ipad
         count++;
     }
+    
+    if (!debug) CGDisplayHideCursor(NULL);
+
     
 
 }
@@ -98,6 +104,8 @@ void ofApp::setupOSC(){
     iPadSender.setup(iPadIP, PORT);
     iPhoneSender.setup(iPhoneIP, PORT);
     osxSender.setup(osxIP, PORT);
+    
+    iPhoneOSCCount, OSXOSCCount, iPadOSCCount = 30;
 }
 
 //--------------------------------------------------------------
@@ -122,6 +130,10 @@ void ofApp::setupUI()
     gui->addTextInput("OS X IP", "Mac Mini IP Address")->setAutoClear(false);
     gui->addTextInput("iPad IP", "iPad IP Address")->setAutoClear(false);
 	gui->setWidgetFontSize(OFX_UI_FONT_MEDIUM);
+    gui->addSlider("iPhone OSC", 30, 100, 30);
+    gui->addSlider("OS X OSC", 30, 100, 30);
+    gui->addSlider("iPad OSC", 30, 100, 30);
+    
     gui->addToggle("Sync Video", false, 32, 32);
     gui->addButton("Download videos", false, 44, 44);
     //gui->addButton("Update JSON", false, 44, 44);
@@ -225,7 +237,8 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
         //setupOSC();
         //sendOSC = toggle->getValue();
         if(button->getValue() == 1){
-            downloadVideos();
+            //downloadVideos();
+            getJSON();
         }
         //cout << name << "\t value: " << button->getValue() << endl;
     }
@@ -250,6 +263,26 @@ void ofApp::guiEvent(ofxUIEventArgs &e)
             cout << "SELECTED: " << selected[i]->getName() << endl;
             changeVideo(selected[i]->getName());
         }
+    }
+
+    //sliders
+    
+    else if(name == "iPhone OSC")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        iPhoneOSCCount = (int)slider->getValue();
+    }
+    
+    else if(name == "OS X OSC")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        OSXOSCCount = (int)slider->getValue();
+    }
+    
+    else if(name == "iPad OSC")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        iPadOSCCount = (int)slider->getValue();
     }
 }
 
@@ -277,7 +310,9 @@ void ofApp::updateDDL(){
     //ddl->addToggle("iphone.mov");
     //update our dropdown box with the videos
     for (int i=0; i<response["videos"].size(); i++){
-        ddl->addToggle(response["videos"][i]["filename"].asString());
+        if (response["videos"][i]["tag"].asString() == "Macbook") {
+            ddl->addToggle(response["videos"][i]["filename"].asString());
+        }
     }
 }
 
@@ -389,21 +424,23 @@ void ofApp::loadJSON(){
 void ofApp::downloadVideos(){
     
     for (int i=0; i<response["videos"].size(); i++){
+        if (response["videos"][i]["tag"].asString() == "Macbook") {
         
-        ofFile video;
-        string video_url = response["videos"][i]["link"].asString();
-        string video_filename = response["videos"][i]["filename"].asString();
-        string video_final_path = ofToDataPath(video_filename);
+            ofFile video;
+            string video_url = response["videos"][i]["link"].asString();
+            string video_filename = response["videos"][i]["filename"].asString();
+            string video_final_path = ofToDataPath(video_filename);
 
-        if (!video.doesFileExist(video_final_path)) {
-            //[indicator startAnimating];
-            drawLoading = true;
-            numVideosToGet++;
-            fileloader.saveAsync(video_url, video_final_path);
-            cout << "downloading video number: " << i  << " url: " << video_url << " final path: " << video_final_path << " num vids to get " << numVideosToGet << endl;
-            cout << "draw loading? : " << drawLoading << endl;
+            if (!video.doesFileExist(video_final_path)) {
+                //[indicator startAnimating];
+                drawLoading = true;
+                numVideosToGet++;
+                fileloader.saveAsync(video_url, video_final_path);
+                cout << "downloading video number: " << i  << " url: " << video_url << " final path: " << video_final_path << " num vids to get " << numVideosToGet << endl;
+                cout << "draw loading? : " << drawLoading << endl;
+            }
+            
         }
-        
     }
     
 }

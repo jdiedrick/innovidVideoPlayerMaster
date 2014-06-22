@@ -82,6 +82,10 @@ class ofApp : public ofBaseApp{
     int numVideosToGet;
     
     bool drawLoading;
+    
+    int iPhoneOSCCount;
+    int OSXOSCCount;
+    int iPadOSCCount;
 
 		
 };

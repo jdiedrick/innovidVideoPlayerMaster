@@ -105,7 +105,8 @@ void ofApp::setupOSC(){
     iPhoneSender.setup(iPhoneIP, PORT);
     osxSender.setup(osxIP, PORT);
     
-    iPhoneOSCCount, OSXOSCCount, iPadOSCCount = 30;
+    iPhoneOSCCount = OSXOSCCount = iPadOSCCount = 30;
+    cout << "iphone osc: " << iPhoneOSCCount << " osx osc: " << OSXOSCCount << " ipad osc: " << iPadOSCCount << endl;
 }
 
 //--------------------------------------------------------------
